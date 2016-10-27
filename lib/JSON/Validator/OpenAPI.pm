@@ -30,7 +30,10 @@ sub validate_request {
       $exists = length $value if defined $value;
     }
     elsif ($in eq 'formData' and $type eq 'file') {
-      $value = $c->req->upload($name);
+      $value
+        = UNIVERSAL::isa($c, "Mojolicious::Controller")
+        ? $c->req->upload($name)
+        : die 'Type of $c not supported';
       $exists = $value ? 1 : 0;
     }
     else {
@@ -94,17 +97,22 @@ sub validate_response {
 sub _extract_request_parameter {
   my ($self, $c, $in) = @_;
 
-  return $c->req->url->query->to_hash  if $in eq 'query';
-  return $c->match->stack->[-1]        if $in eq 'path';
-  return $c->req->body_params->to_hash if $in eq 'formData';
-  return $c->req->headers->to_hash     if $in eq 'header';
-  return $c->req->json                 if $in eq 'body';
-  return {};
+  if (UNIVERSAL::isa($c, 'Mojolicious::Controller')) {
+    return $c->req->url->query->to_hash  if $in eq 'query';
+    return $c->match->stack->[-1]        if $in eq 'path';
+    return $c->req->body_params->to_hash if $in eq 'formData';
+    return $c->req->headers->to_hash     if $in eq 'header';
+    return $c->req->json                 if $in eq 'body';
+    return {};
+  }
+  else { die 'Type of $c not supported' }
 }
 
 sub _set_request_parameter {
   my ($self, $c, $p, $value) = @_;
   my ($in, $name) = @$p{qw(in name)};
+
+  UNIVERSAL::isa($c, "Mojolicious::Controller") or die 'Type of $c not supported';
 
   if ($in eq 'query') {
     $c->req->url->query([$name => $value]);
@@ -165,8 +173,11 @@ sub _validate_request_value {
 
 sub _validate_response_headers {
   my ($self, $c, $schema) = @_;
-  my $headers = $c->res->headers;
-  my $input   = $headers->to_hash(1);
+  my $headers
+    = UNIVERSAL::isa($c, "Mojolicious::Controller")
+    ? $c->res->headers
+    : die 'Type of $c not supported';
+  my $input = $headers->to_hash(1);
   my @errors;
 
   for my $name (keys %$schema) {
