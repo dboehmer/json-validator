@@ -13,8 +13,14 @@ sub _get_request_data {
   return $dsl->body_parameters->as_hashref_mixed  if $in eq 'formData';
   return Hash::MultiValue->new($dsl->app->request->headers->flatten)->as_hashref_mixed
     if $in eq 'header';
-  return $dsl->app->request->data if $in eq 'body';
+  return $self->_parse_request_body($dsl) if $in eq 'body';
   return {};    # TODO correct?
+}
+
+sub _parse_request_body {
+  my ($self, $dsl) = @_;
+
+  return $dsl->app->request->data;
 }
 
 sub _get_request_uploads {

@@ -49,7 +49,7 @@ sub validate_request {
 
     if ($in eq 'body') {
       $value = $self->_get_request_data($c, $in);
-      $exists = length $value if defined $value;
+      $exists = ref $value ? 1 : length $value;
     }
     elsif ($in eq 'formData' and $type eq 'file') {
       ($value) = $self->_get_request_uploads($c, $name);
@@ -129,7 +129,8 @@ sub _validate_request_value {
   if ($in eq 'body') {
     warn "[JSON::Validator::OpenAPI] Validate $in $name\n" if DEBUG;
     if ($p->{'x-json-schema'}) {
-      return $self->_json_validator->validate({$name => $value}, $schema);
+
+      #return $self->_json_validator->validate({$name => $value}, $schema);
     }
     else {
       return $self->validate_input({$name => $value}, $schema);
